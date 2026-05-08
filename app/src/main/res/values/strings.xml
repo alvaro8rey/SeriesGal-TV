@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">SeriesGal TV</string>
+    <string name="home_welcome">Inicio Android TV</string>
+    <string name="home_action_explore">Explorar catalogo</string>
+    <string name="home_action_profile">Perfil</string>
+</resources>
