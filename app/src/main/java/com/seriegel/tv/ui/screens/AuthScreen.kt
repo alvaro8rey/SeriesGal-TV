@@ -20,6 +20,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.tv.material3.Button
 import androidx.tv.material3.OutlinedButton
 import androidx.tv.material3.Text
+import com.seriegel.tv.ui.theme.SeriesGalColors
 import com.seriegel.tv.ui.viewmodel.AuthViewModel
 
 @Composable
@@ -31,6 +32,7 @@ fun AuthScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(SeriesGalColors.Background)
             .padding(36.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -47,7 +49,10 @@ fun AuthScreen(
                 modifier = Modifier.padding(24.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                Text(if (state.isRegisterMode) "Crear cuenta" else "Iniciar sesión")
+                Text(
+                    text = if (state.isRegisterMode) "Crear cuenta" else "Iniciar sesión",
+                    color = SeriesGalColors.TextPrimary,
+                )
                 OutlinedTextField(
                     value = state.username,
                     onValueChange = viewModel::onUsernameChanged,
@@ -62,7 +67,7 @@ fun AuthScreen(
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                 )
-                state.errorMessage?.let { Text(text = it) }
+                state.errorMessage?.let { Text(text = it, color = SeriesGalColors.TextSecondary) }
                 Button(
                     onClick = viewModel::submit,
                     enabled = !state.isLoading,

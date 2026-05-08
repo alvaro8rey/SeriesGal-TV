@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,6 +27,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -35,11 +39,11 @@ import androidx.tv.material3.CardDefaults
 import androidx.tv.material3.Icon
 import androidx.tv.material3.IconButton
 import androidx.tv.material3.MaterialTheme
-import androidx.tv.material3.OutlinedButton
 import androidx.tv.material3.Text
 import coil.compose.AsyncImage
 import com.seriegel.tv.ui.viewmodel.HomeCard
 import com.seriegel.tv.ui.viewmodel.HomeViewModel
+import com.seriegel.tv.ui.theme.SeriesGalColors
 
 @Composable
 fun HomeScreen(
@@ -49,10 +53,15 @@ fun HomeScreen(
     viewModel: HomeViewModel = viewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val brandName = buildAnnotatedString {
+        withStyle(SpanStyle(color = SeriesGalColors.TextPrimary)) { append("Series") }
+        withStyle(SpanStyle(color = SeriesGalColors.BrandBlue)) { append("Gal") }
+    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
             .padding(horizontal = 28.dp, vertical = 22.dp),
     ) {
         Row(
@@ -60,25 +69,27 @@ fun HomeScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = uiState.title,
+                text = brandName,
                 style = MaterialTheme.typography.headlineMedium,
                 modifier = Modifier.weight(1f),
             )
             IconButton(onClick = { }) {
                 Icon(Icons.Filled.Search, contentDescription = "Buscar")
             }
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-        OutlinedButton(onClick = onOpenProfile) {
-            Text("Perfil")
+            IconButton(onClick = onOpenProfile) {
+                Icon(Icons.Filled.AccountCircle, contentDescription = "Perfil")
+            }
         }
 
         Spacer(modifier = Modifier.height(10.dp))
         LazyColumn(verticalArrangement = Arrangement.spacedBy(20.dp)) {
             items(uiState.sections) { section ->
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text(section.title, style = MaterialTheme.typography.titleLarge)
+                    Text(
+                        text = section.title,
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onBackground,
+                    )
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                         items(section.items) { item ->
                             ContentCard(
@@ -138,13 +149,18 @@ private fun ContentCard(
                         card.title,
                         maxLines = 2,
                         style = MaterialTheme.typography.bodyMedium,
+                        color = SeriesGalColors.TextPrimary,
                     )
                     when (card) {
                         is HomeCard.SeriesCard -> {
-                            card.subtitle?.takeIf { it.isNotBlank() }?.let { Text(it, maxLines = 1) }
+                            card.subtitle?.takeIf { it.isNotBlank() }?.let {
+                                Text(it, maxLines = 1, color = SeriesGalColors.TextSecondary)
+                            }
                         }
                         is HomeCard.MovieCard -> {
-                            card.subtitle?.takeIf { it.isNotBlank() }?.let { Text(it, maxLines = 1) }
+                            card.subtitle?.takeIf { it.isNotBlank() }?.let {
+                                Text(it, maxLines = 1, color = SeriesGalColors.TextSecondary)
+                            }
                         }
                     }
                 }

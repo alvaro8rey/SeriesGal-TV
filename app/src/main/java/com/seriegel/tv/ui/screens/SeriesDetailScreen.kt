@@ -1,9 +1,11 @@
 package com.seriegel.tv.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
@@ -27,6 +29,7 @@ import androidx.tv.material3.OutlinedButton
 import androidx.tv.material3.Text
 import coil.compose.AsyncImage
 import com.seriegel.tv.core.config.ServerConfig
+import com.seriegel.tv.ui.theme.SeriesGalColors
 import com.seriegel.tv.ui.viewmodel.SeriesDetailViewModel
 
 @Composable
@@ -43,7 +46,10 @@ fun SeriesDetailScreen(
     }
 
     LazyColumn(
-        modifier = Modifier.padding(30.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .padding(30.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item {
@@ -66,8 +72,13 @@ fun SeriesDetailScreen(
                     Text(
                         text = state.series?.title ?: "Serie",
                         style = MaterialTheme.typography.headlineMedium,
+                        color = SeriesGalColors.TextPrimary,
                     )
-                    Text(state.series?.description.orEmpty(), maxLines = 6)
+                    Text(
+                        text = state.series?.description.orEmpty(),
+                        maxLines = 6,
+                        color = SeriesGalColors.TextSecondary,
+                    )
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         OutlinedButton(onClick = onBack) { Text("Atrás") }
                         Button(onClick = viewModel::toggleFavorite) {
@@ -96,7 +107,10 @@ fun SeriesDetailScreen(
                         onClick = viewModel::previousPage,
                         enabled = state.currentPage > 0,
                     ) { Text("Página anterior") }
-                    Text("Página ${state.currentPage + 1} de ${state.totalPages}")
+                    Text(
+                        text = "Página ${state.currentPage + 1} de ${state.totalPages}",
+                        color = SeriesGalColors.TextSecondary,
+                    )
                     OutlinedButton(
                         onClick = viewModel::nextPage,
                         enabled = state.currentPage < state.totalPages - 1,
@@ -115,6 +129,7 @@ fun SeriesDetailScreen(
             ) {
                 Row(
                     modifier = Modifier
+                        .background(SeriesGalColors.SurfaceSoft)
                         .fillMaxWidth()
                         .padding(horizontal = 12.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -124,10 +139,11 @@ fun SeriesDetailScreen(
                         style = MaterialTheme.typography.titleMedium,
                         modifier = Modifier.weight(1f),
                         maxLines = 1,
+                        color = SeriesGalColors.TextPrimary,
                     )
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         if (episodeUi.isCompleted) {
-                            Text("Completado")
+                            Text("Completado", color = SeriesGalColors.TextSecondary)
                         }
                         Button(onClick = { viewModel.playEpisode(episodeUi.episode); onPlay() }) {
                             Text(if (episodeUi.progressRatio > 0.05f) "Reanudar" else "Ver")

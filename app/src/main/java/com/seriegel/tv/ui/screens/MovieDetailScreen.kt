@@ -1,9 +1,11 @@
 package com.seriegel.tv.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -23,6 +25,7 @@ import androidx.tv.material3.OutlinedButton
 import androidx.tv.material3.Text
 import coil.compose.AsyncImage
 import com.seriegel.tv.core.config.ServerConfig
+import com.seriegel.tv.ui.theme.SeriesGalColors
 import com.seriegel.tv.ui.viewmodel.MovieDetailViewModel
 
 @Composable
@@ -39,7 +42,10 @@ fun MovieDetailScreen(
     }
 
     Column(
-        modifier = Modifier.padding(30.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .padding(30.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Row(
@@ -58,10 +64,18 @@ fun MovieDetailScreen(
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     OutlinedButton(onClick = onBack) { Text("Atrás") }
                 }
-                Text(state.movie?.title ?: "Película", style = MaterialTheme.typography.headlineMedium)
-                Text(state.movie?.description.orEmpty(), maxLines = 6)
-                Text("Año: ${state.movie?.year.orEmpty()}")
-                Text("Progreso ${(state.resumeProgress * 100).toInt()}%")
+                Text(
+                    text = state.movie?.title ?: "Película",
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = SeriesGalColors.TextPrimary,
+                )
+                Text(
+                    text = state.movie?.description.orEmpty(),
+                    maxLines = 6,
+                    color = SeriesGalColors.TextSecondary,
+                )
+                Text("Año: ${state.movie?.year.orEmpty()}", color = SeriesGalColors.TextSecondary)
+                Text("Progreso ${(state.resumeProgress * 100).toInt()}%", color = SeriesGalColors.TextSecondary)
             }
         }
         Spacer(modifier = Modifier.height(10.dp))
