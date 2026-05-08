@@ -23,9 +23,15 @@ data class HomeUiState(
 )
 
 data class HomeSection(
+    val type: HomeSectionType,
     val title: String,
     val items: List<HomeCard>,
 )
+
+enum class HomeSectionType {
+    SERIES,
+    MOVIES,
+}
 
 sealed interface HomeCard {
     val id: String
@@ -125,7 +131,7 @@ private fun buildSections(
     }
 
     val sections = mutableListOf<HomeSection>()
-    if (seriesCards.isNotEmpty()) sections += HomeSection("Series", seriesCards)
-    if (movieCards.isNotEmpty()) sections += HomeSection("Películas", movieCards)
+    if (seriesCards.isNotEmpty()) sections += HomeSection(HomeSectionType.SERIES, "Series", seriesCards)
+    if (movieCards.isNotEmpty()) sections += HomeSection(HomeSectionType.MOVIES, "Películas", movieCards)
     return sections
 }

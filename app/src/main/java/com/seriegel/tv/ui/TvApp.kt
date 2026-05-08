@@ -17,6 +17,7 @@ import androidx.navigation.navArgument
 import androidx.tv.material3.MaterialTheme
 import com.seriegel.tv.ui.navigation.TvRoutes
 import com.seriegel.tv.ui.screens.AuthScreen
+import com.seriegel.tv.ui.screens.BrowseCatalogScreen
 import com.seriegel.tv.ui.screens.HomeScreen
 import com.seriegel.tv.ui.screens.MovieDetailScreen
 import com.seriegel.tv.ui.screens.PlayerScreen
@@ -73,10 +74,24 @@ fun TvApp() {
                     onOpenMovie = { navController.navigate(TvRoutes.movieDetail(it)) },
                     onOpenSearch = { navController.navigate(TvRoutes.SEARCH) },
                     onOpenProfile = { navController.navigate(TvRoutes.PROFILE) },
+                    onSeeMoreSeries = { navController.navigate(TvRoutes.browse("series")) },
+                    onSeeMoreMovies = { navController.navigate(TvRoutes.browse("movies")) },
                 )
             }
             composable(TvRoutes.SEARCH) {
                 SearchScreen(
+                    onBack = { navController.popBackStack() },
+                    onOpenSeries = { navController.navigate(TvRoutes.seriesDetail(it)) },
+                    onOpenMovie = { navController.navigate(TvRoutes.movieDetail(it)) },
+                )
+            }
+            composable(
+                route = TvRoutes.BROWSE,
+                arguments = listOf(navArgument("contentType") { type = NavType.StringType }),
+            ) { backStackEntry ->
+                val contentType = backStackEntry.arguments?.getString("contentType").orEmpty()
+                BrowseCatalogScreen(
+                    contentType = contentType,
                     onBack = { navController.popBackStack() },
                     onOpenSeries = { navController.navigate(TvRoutes.seriesDetail(it)) },
                     onOpenMovie = { navController.navigate(TvRoutes.movieDetail(it)) },

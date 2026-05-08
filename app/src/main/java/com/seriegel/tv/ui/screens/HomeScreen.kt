@@ -42,6 +42,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import coil.compose.AsyncImage
 import com.seriegel.tv.ui.viewmodel.HomeCard
+import com.seriegel.tv.ui.viewmodel.HomeSectionType
 import com.seriegel.tv.ui.viewmodel.HomeViewModel
 import com.seriegel.tv.ui.theme.SeriesGalColors
 
@@ -51,6 +52,8 @@ fun HomeScreen(
     onOpenMovie: (String) -> Unit,
     onOpenSearch: () -> Unit,
     onOpenProfile: () -> Unit,
+    onSeeMoreSeries: () -> Unit,
+    onSeeMoreMovies: () -> Unit,
     viewModel: HomeViewModel = viewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -91,8 +94,9 @@ fun HomeScreen(
                         style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.onBackground,
                     )
+                    val previewItems = section.items.take(10)
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                        items(section.items) { item ->
+                        items(previewItems) { item ->
                             ContentCard(
                                 card = item,
                                 onClick = {
@@ -103,9 +107,43 @@ fun HomeScreen(
                                 },
                             )
                         }
+                        if (section.items.size > 10) {
+                            item {
+                                SeeMoreCard(
+                                    onClick = {
+                                        when (section.type) {
+                                            HomeSectionType.SERIES -> onSeeMoreSeries()
+                                            HomeSectionType.MOVIES -> onSeeMoreMovies()
+                                        }
+                                    },
+                                )
+                            }
+                        }
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun SeeMoreCard(onClick: () -> Unit) {
+    Card(
+        onClick = onClick,
+        scale = CardDefaults.scale(focusedScale = 1.015f),
+        modifier = Modifier.size(width = 150.dp, height = 220.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(SeriesGalColors.SurfaceSoft),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = "Ver más",
+                style = MaterialTheme.typography.titleMedium,
+                color = SeriesGalColors.BrandBlue,
+            )
         }
     }
 }
