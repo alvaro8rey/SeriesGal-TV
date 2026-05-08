@@ -18,9 +18,16 @@ data class PlaybackRequest(
     val isMovie: Boolean = false,
 )
 
+data class NextEpisodePrompt(
+    val seriesId: String,
+    val nextEpisode: Episode,
+)
+
 class PlaybackCoordinator {
     private val _currentRequest = MutableStateFlow<PlaybackRequest?>(null)
     val currentRequest: StateFlow<PlaybackRequest?> = _currentRequest.asStateFlow()
+    private val _nextEpisodePrompt = MutableStateFlow<NextEpisodePrompt?>(null)
+    val nextEpisodePrompt: StateFlow<NextEpisodePrompt?> = _nextEpisodePrompt.asStateFlow()
 
     fun playEpisode(
         seriesId: String,
@@ -64,5 +71,16 @@ class PlaybackCoordinator {
             nextEpisode = null,
             isMovie = !item.isSeries,
         )
+    }
+
+    fun requestNextEpisodePrompt(seriesId: String, nextEpisode: Episode) {
+        _nextEpisodePrompt.value = NextEpisodePrompt(
+            seriesId = seriesId,
+            nextEpisode = nextEpisode,
+        )
+    }
+
+    fun clearNextEpisodePrompt() {
+        _nextEpisodePrompt.value = null
     }
 }

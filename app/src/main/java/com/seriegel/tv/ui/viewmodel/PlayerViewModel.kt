@@ -8,7 +8,6 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import com.seriegel.tv.TvApplication
-import com.seriegel.tv.core.config.ServerConfig
 import com.seriegel.tv.domain.model.ProgressUpdate
 import com.seriegel.tv.player.PlaybackRequest
 import java.net.URI
@@ -23,8 +22,7 @@ import kotlinx.coroutines.launch
 
 data class PlayerUiState(
     val request: PlaybackRequest? = null,
-    val showNextEpisodePrompt: Boolean = false,
-    val nextEpisodeCountdown: Int = 10,
+    val closePlayer: Boolean = false,
     val errorMessage: String? = null,
 )
 
@@ -40,12 +38,11 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
     val uiState: StateFlow<PlayerUiState> = _uiState.asStateFlow()
 
     private var progressJob: Job? = null
-    private var countdownJob: Job? = null
 
     init {
         viewModelScope.launch {
             coordinator.currentRequest.collect { request ->
-                _uiState.update { it.copy(request = request, showNextEpisodePrompt = false, nextEpisodeCountdown = 10) }
+                _uiState.update { it.copy(request = request, closePlayer = false) }
                 if (request != null) {
                     startPlayback(request)
                 }
@@ -72,52 +69,32 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
             object : Player.Listener {
                 override fun onPlaybackStateChanged(playbackState: Int) {
                     if (playbackState == Player.STATE_ENDED) {
-                        maybePromptNextEpisode()
+                        onPlaybackEnded()
                     }
                 }
             },
         )
     }
 
-    private fun maybePromptNextEpisode() {
+    private fun onPlaybackEnded() {
         val request = _uiState.value.request ?: return
-        val next = request.nextEpisode ?: return
-        _uiState.update { it.copy(showNextEpisodePrompt = true, nextEpisodeCountdown = 10) }
-        countdownJob?.cancel()
-        countdownJob = viewModelScope.launch {
-            var count = 10
-            while (isActive && count > 0) {
-                delay(1000)
-                count--
-                _uiState.update { it.copy(nextEpisodeCountdown = count) }
-            }
-            if (count == 0) {
-                cancelNextEpisodePrompt()
-                container.playbackCoordinator.playEpisode(
-                    seriesId = request.seriesId,
-                    episode = next,
-                    streamUrl = ServerConfig.streamUrl(next.urlPath),
-                    nextEpisode = null,
-                )
-            }
+        val next = request.nextEpisode
+        if (next != null) {
+            coordinator.requestNextEpisodePrompt(request.seriesId, next)
+        } else {
+            coordinator.clearNextEpisodePrompt()
         }
+        saveProgressSnapshot()
+        _uiState.update { it.copy(closePlayer = true) }
     }
 
-    fun playNextNow() {
-        val request = _uiState.value.request ?: return
-        val next = request.nextEpisode ?: return
-        cancelNextEpisodePrompt()
-        container.playbackCoordinator.playEpisode(
-            seriesId = request.seriesId,
-            episode = next,
-            streamUrl = ServerConfig.streamUrl(next.urlPath),
-            nextEpisode = null,
-        )
+    fun consumeClosePlayer() {
+        _uiState.update { it.copy(closePlayer = false) }
     }
 
-    fun cancelNextEpisodePrompt() {
-        countdownJob?.cancel()
-        _uiState.update { it.copy(showNextEpisodePrompt = false, nextEpisodeCountdown = 10) }
+    fun forceClosePlayer() {
+        saveProgressSnapshot()
+        _uiState.update { it.copy(closePlayer = true) }
     }
 
     private fun startPeriodicProgressSaves() {
@@ -151,7 +128,6 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
     override fun onCleared() {
         saveProgressSnapshot()
         progressJob?.cancel()
-        countdownJob?.cancel()
         player.release()
         super.onCleared()
     }

@@ -13,13 +13,17 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.tv.material3.Button
 import androidx.tv.material3.Card
@@ -40,9 +44,27 @@ fun SeriesDetailScreen(
     viewModel: SeriesDetailViewModel = viewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val lifecycleOwner = LocalLifecycleOwner.current
 
     LaunchedEffect(seriesId) {
         viewModel.load(seriesId)
+    }
+    LaunchedEffect(state.navigateToPlayer) {
+        if (state.navigateToPlayer) {
+            onPlay()
+            viewModel.consumeNavigateToPlayer()
+        }
+    }
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.refreshContinueWatching()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
     }
 
     LazyColumn(
@@ -89,6 +111,71 @@ fun SeriesDetailScreen(
             }
         }
 
+        state.continueWatching?.let { continueWatching ->
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    scale = CardDefaults.scale(focusedScale = 1.01f),
+                    onClick = {
+                        viewModel.resumeContinueWatching()
+                    },
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(SeriesGalColors.SurfaceSoft)
+                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Column {
+                            Text("Seguir viendo", color = SeriesGalColors.TextSecondary)
+                            Text(
+                                text = "${continueWatching.episodeTitle} · ${continueWatching.progressPercent}%",
+                                color = SeriesGalColors.TextPrimary,
+                            )
+                        }
+                        Button(onClick = viewModel::resumeContinueWatching) {
+                            Text("Reanudar")
+                        }
+                    }
+                }
+            }
+        }
+
+        state.nextEpisodeCountdown?.let { prompt ->
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    scale = CardDefaults.scale(focusedScale = 1.01f),
+                    onClick = {},
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(SeriesGalColors.SurfaceSoft)
+                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            Text("Siguiente episodio", color = SeriesGalColors.TextSecondary)
+                            Text(
+                                text = "${prompt.episodeTitle} en ${prompt.secondsRemaining}s",
+                                color = SeriesGalColors.TextPrimary,
+                                maxLines = 1,
+                            )
+                        }
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Button(onClick = viewModel::playNextEpisodeNow) { Text("Reproducir") }
+                            OutlinedButton(onClick = viewModel::cancelNextEpisodeCountdown) { Text("Cancelar") }
+                        }
+                    }
+                }
+            }
+        }
+
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 state.series?.seasons?.forEachIndexed { index, season ->
@@ -121,7 +208,7 @@ fun SeriesDetailScreen(
 
         items(state.episodes) { episodeUi ->
             Card(
-                onClick = { viewModel.playEpisode(episodeUi.episode); onPlay() },
+                onClick = { viewModel.playEpisode(episodeUi.episode) },
                 scale = CardDefaults.scale(focusedScale = 1.015f),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -145,7 +232,7 @@ fun SeriesDetailScreen(
                         if (episodeUi.isCompleted) {
                             Text("Completado", color = SeriesGalColors.TextSecondary)
                         }
-                        Button(onClick = { viewModel.playEpisode(episodeUi.episode); onPlay() }) {
+                        Button(onClick = { viewModel.playEpisode(episodeUi.episode) }) {
                             Text(if (episodeUi.progressRatio > 0.05f) "Reanudar" else "Ver")
                         }
                     }
