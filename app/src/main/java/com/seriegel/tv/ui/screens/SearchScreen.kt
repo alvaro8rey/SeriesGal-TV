@@ -8,10 +8,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.matchParentSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -63,7 +61,7 @@ fun SearchScreen(
             OutlinedTextField(
                 value = state.query,
                 onValueChange = viewModel::onQueryChanged,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.fillMaxWidth(0.82f),
                 singleLine = true,
                 label = { androidx.compose.material3.Text("Buscar series o películas") },
             )
@@ -146,11 +144,11 @@ private fun SearchResultCard(
                 )
                 Box(
                     modifier = Modifier
-                        .matchParentSize()
+                        .fillMaxSize()
                         .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.25f)))),
                 )
             }
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Column(modifier = Modifier.fillMaxWidth(0.67f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(item.title, color = SeriesGalColors.TextPrimary, maxLines = 1)
                 if (item.subtitle.isNotBlank()) {
                     Text(item.subtitle, color = SeriesGalColors.TextSecondary, maxLines = 1)
