@@ -4,6 +4,7 @@ object TvRoutes {
     const val SPLASH = "splash"
     const val AUTH = "auth"
     const val HOME = "home"
+    const val SEARCH = "search"
     const val PROFILE = "profile"
     const val DOWNLOADS = "downloads"
     const val SERIES_DETAIL = "series_detail/{seriesId}"

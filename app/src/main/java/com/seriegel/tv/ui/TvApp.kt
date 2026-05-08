@@ -21,6 +21,7 @@ import com.seriegel.tv.ui.screens.HomeScreen
 import com.seriegel.tv.ui.screens.MovieDetailScreen
 import com.seriegel.tv.ui.screens.PlayerScreen
 import com.seriegel.tv.ui.screens.ProfileScreen
+import com.seriegel.tv.ui.screens.SearchScreen
 import com.seriegel.tv.ui.screens.SeriesDetailScreen
 import com.seriegel.tv.ui.screens.SplashScreen
 import com.seriegel.tv.ui.viewmodel.AppSessionViewModel
@@ -70,7 +71,15 @@ fun TvApp() {
                 HomeScreen(
                     onOpenSeries = { navController.navigate(TvRoutes.seriesDetail(it)) },
                     onOpenMovie = { navController.navigate(TvRoutes.movieDetail(it)) },
+                    onOpenSearch = { navController.navigate(TvRoutes.SEARCH) },
                     onOpenProfile = { navController.navigate(TvRoutes.PROFILE) },
+                )
+            }
+            composable(TvRoutes.SEARCH) {
+                SearchScreen(
+                    onBack = { navController.popBackStack() },
+                    onOpenSeries = { navController.navigate(TvRoutes.seriesDetail(it)) },
+                    onOpenMovie = { navController.navigate(TvRoutes.movieDetail(it)) },
                 )
             }
             composable(TvRoutes.PROFILE) {

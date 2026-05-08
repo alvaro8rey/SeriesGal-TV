@@ -49,6 +49,7 @@ import com.seriegel.tv.ui.theme.SeriesGalColors
 fun HomeScreen(
     onOpenSeries: (String) -> Unit,
     onOpenMovie: (String) -> Unit,
+    onOpenSearch: () -> Unit,
     onOpenProfile: () -> Unit,
     viewModel: HomeViewModel = viewModel(),
 ) {
@@ -73,7 +74,7 @@ fun HomeScreen(
                 style = MaterialTheme.typography.headlineMedium,
                 modifier = Modifier.weight(1f),
             )
-            IconButton(onClick = { }) {
+            IconButton(onClick = onOpenSearch) {
                 Icon(Icons.Filled.Search, contentDescription = "Buscar")
             }
             IconButton(onClick = onOpenProfile) {
