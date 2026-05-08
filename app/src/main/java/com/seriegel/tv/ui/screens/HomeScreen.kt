@@ -131,7 +131,7 @@ private fun SeeMoreCard(onClick: () -> Unit) {
     Card(
         onClick = onClick,
         scale = CardDefaults.scale(focusedScale = 1.015f),
-        modifier = Modifier.size(width = 150.dp, height = 220.dp),
+        modifier = Modifier.size(width = 124.dp, height = 180.dp),
     ) {
         Box(
             modifier = Modifier
