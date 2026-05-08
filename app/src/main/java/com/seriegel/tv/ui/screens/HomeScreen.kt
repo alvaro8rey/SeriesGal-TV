@@ -157,7 +157,7 @@ private fun ContentCard(
         onClick = onClick,
         scale = CardDefaults.scale(focusedScale = 1.015f),
         modifier = Modifier
-            .size(width = 82.dp, height = 120.dp),
+            .size(width = 124.dp, height = 180.dp),
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             AsyncImage(
@@ -186,7 +186,7 @@ private fun ContentCard(
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
                         card.title,
-                        maxLines = 1,
+                        maxLines = 2,
                         style = MaterialTheme.typography.bodyMedium,
                         color = SeriesGalColors.TextPrimary,
                     )
