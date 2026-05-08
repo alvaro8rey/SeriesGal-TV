@@ -31,6 +31,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.tv.material3.Button
 import androidx.tv.material3.Card
+import androidx.tv.material3.CardDefaults
 import androidx.tv.material3.Icon
 import androidx.tv.material3.IconButton
 import androidx.tv.material3.MaterialTheme
@@ -104,8 +105,9 @@ private fun ContentCard(
 ) {
     Card(
         onClick = onClick,
+        scale = CardDefaults.scale(focusedScale = 1.015f),
         modifier = Modifier
-            .size(width = 180.dp, height = 270.dp),
+            .size(width = 150.dp, height = 220.dp),
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             AsyncImage(
@@ -135,7 +137,7 @@ private fun ContentCard(
                     Text(
                         card.title,
                         maxLines = 2,
-                        style = MaterialTheme.typography.titleSmall,
+                        style = MaterialTheme.typography.bodyMedium,
                     )
                     when (card) {
                         is HomeCard.SeriesCard -> {

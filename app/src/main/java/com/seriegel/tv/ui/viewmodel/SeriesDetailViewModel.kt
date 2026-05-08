@@ -5,15 +5,12 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.seriegel.tv.TvApplication
 import com.seriegel.tv.core.config.ServerConfig
-import com.seriegel.tv.domain.model.DownloadItem
-import com.seriegel.tv.domain.model.DownloadQuality
 import com.seriegel.tv.domain.model.Episode
 import com.seriegel.tv.domain.model.Series
 import com.seriegel.tv.domain.repository.CatalogRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -21,37 +18,27 @@ data class EpisodeUi(
     val episode: Episode,
     val progressRatio: Float,
     val isCompleted: Boolean,
-    val download: DownloadItem?,
 )
 
 data class SeriesDetailUiState(
     val isLoading: Boolean = true,
     val series: Series? = null,
     val selectedSeasonIndex: Int = 0,
+    val currentPage: Int = 0,
+    val totalPages: Int = 1,
     val favorite: Boolean = false,
     val episodes: List<EpisodeUi> = emptyList(),
-    val qualitySelection: DownloadQuality = DownloadQuality.HIGH,
     val errorMessage: String? = null,
 )
 
 class SeriesDetailViewModel(application: Application) : AndroidViewModel(application) {
     private val container = (application as TvApplication).appContainer
     private val catalogRepository: CatalogRepository = container.catalogRepository
-    private val downloadsRepository = container.downloadsRepository
     private val playbackCoordinator = container.playbackCoordinator
+    private var completedEpisodeIds: Set<String> = emptySet()
 
     private val _uiState = MutableStateFlow(SeriesDetailUiState())
     val uiState: StateFlow<SeriesDetailUiState> = _uiState.asStateFlow()
-
-    init {
-        viewModelScope.launch {
-            downloadsRepository.downloads.collect {
-                _uiState.value.series?.let { series ->
-                    rebuildEpisodes(series, _uiState.value.selectedSeasonIndex)
-                }
-            }
-        }
-    }
 
     fun load(seriesId: String) {
         viewModelScope.launch {
@@ -70,24 +57,33 @@ class SeriesDetailViewModel(application: Application) : AndroidViewModel(applica
                     selectedSeasonIndex = 0,
                 )
             }
-            rebuildEpisodes(series, 0)
+            completedEpisodeIds = catalogRepository.fetchSeriesProgress(series.id).getOrDefault(emptySet())
+            rebuildEpisodes(series, seasonIndex = 0, page = 0)
         }
     }
 
     fun selectSeason(index: Int) {
         _uiState.value.series?.let { series ->
-            rebuildEpisodes(series, index)
-            _uiState.update { it.copy(selectedSeasonIndex = index) }
+            rebuildEpisodes(series, seasonIndex = index, page = 0)
         }
     }
 
-    fun cycleQuality() {
-        val next = when (_uiState.value.qualitySelection) {
-            DownloadQuality.HIGH -> DownloadQuality.MEDIUM
-            DownloadQuality.MEDIUM -> DownloadQuality.LOW
-            DownloadQuality.LOW -> DownloadQuality.HIGH
+    fun previousPage() {
+        val state = _uiState.value
+        val target = (state.currentPage - 1).coerceAtLeast(0)
+        if (target == state.currentPage) return
+        state.series?.let { series ->
+            rebuildEpisodes(series, state.selectedSeasonIndex, target)
         }
-        _uiState.update { it.copy(qualitySelection = next) }
+    }
+
+    fun nextPage() {
+        val state = _uiState.value
+        val target = (state.currentPage + 1).coerceAtMost(state.totalPages - 1)
+        if (target == state.currentPage) return
+        state.series?.let { series ->
+            rebuildEpisodes(series, state.selectedSeasonIndex, target)
+        }
     }
 
     fun toggleFavorite() {
@@ -112,45 +108,30 @@ class SeriesDetailViewModel(application: Application) : AndroidViewModel(applica
         )
     }
 
-    fun toggleEpisodeDownload(episode: Episode) {
-        val series = _uiState.value.series ?: return
-        val existing = _uiState.value.episodes.firstOrNull { it.episode.id == episode.id }?.download
-        viewModelScope.launch {
-            if (existing != null) {
-                downloadsRepository.remove(existing.id)
-            } else {
-                downloadsRepository.enqueue(
-                    id = "${series.id}_${episode.id}",
-                    title = "${series.title} - ${episode.title}",
-                    streamUrl = ServerConfig.streamUrl(episode.urlPath),
-                    quality = _uiState.value.qualitySelection,
-                    isSeries = true,
-                    seriesId = series.id,
-                    episodeId = episode.id,
-                )
-            }
-            rebuildEpisodes(series, _uiState.value.selectedSeasonIndex)
-        }
-    }
-
-    private fun rebuildEpisodes(series: Series, seasonIndex: Int) {
+    private fun rebuildEpisodes(series: Series, seasonIndex: Int, page: Int) {
         viewModelScope.launch {
             val season = series.seasons.getOrNull(seasonIndex) ?: return@launch
-            val remoteCompleted = catalogRepository.fetchSeriesProgress(series.id).getOrDefault(emptySet())
-            val downloadItems = downloadsRepository.downloads.first()
-            val episodeItems = season.episodes.map { episode ->
-                val progressResult = catalogRepository.fetchEpisodeProgress(series.id, episode.id).getOrNull()
-                val progressRatio = progressResult?.ratio ?: 0f
+            val pageSize = 20
+            val totalPages = ((season.episodes.size + pageSize - 1) / pageSize).coerceAtLeast(1)
+            val safePage = page.coerceIn(0, totalPages - 1)
+            val pageEpisodes = season.episodes.drop(safePage * pageSize).take(pageSize)
+
+            val episodeItems = pageEpisodes.map { episode ->
+                val completed = episode.id in completedEpisodeIds
                 EpisodeUi(
                     episode = episode,
-                    progressRatio = progressRatio,
-                    isCompleted = episode.id in remoteCompleted || progressRatio > 0.95f,
-                    download = downloadItems.firstOrNull {
-                        it.seriesId == series.id && it.episodeId == episode.id
-                    },
+                    progressRatio = if (completed) 1f else 0f,
+                    isCompleted = completed,
                 )
             }
-            _uiState.update { it.copy(episodes = episodeItems) }
+            _uiState.update {
+                it.copy(
+                    selectedSeasonIndex = seasonIndex,
+                    currentPage = safePage,
+                    totalPages = totalPages,
+                    episodes = episodeItems,
+                )
+            }
         }
     }
 }

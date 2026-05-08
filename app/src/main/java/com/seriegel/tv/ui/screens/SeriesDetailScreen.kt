@@ -3,17 +3,16 @@ package com.seriegel.tv.ui.screens
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
@@ -22,6 +21,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.tv.material3.Button
 import androidx.tv.material3.Card
+import androidx.tv.material3.CardDefaults
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.OutlinedButton
 import androidx.tv.material3.Text
@@ -37,16 +37,9 @@ fun SeriesDetailScreen(
     viewModel: SeriesDetailViewModel = viewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    var pageIndex by remember { mutableIntStateOf(0) }
-    val pagedEpisodes = state.episodes.chunked(20)
-    val maxPages = pagedEpisodes.size
-    val visibleEpisodes = pagedEpisodes.getOrElse(pageIndex) { emptyList() }
 
     LaunchedEffect(seriesId) {
         viewModel.load(seriesId)
-    }
-    LaunchedEffect(state.selectedSeasonIndex) {
-        pageIndex = 0
     }
 
     LazyColumn(
@@ -62,8 +55,8 @@ fun SeriesDetailScreen(
                     model = state.series?.id?.let(ServerConfig::coverUrl),
                     contentDescription = state.series?.title,
                     modifier = Modifier
-                        .size(width = 220.dp, height = 320.dp)
-                        .clip(androidx.compose.foundation.shape.RoundedCornerShape(12.dp)),
+                        .size(width = 200.dp, height = 290.dp)
+                        .clip(RoundedCornerShape(12.dp)),
                     contentScale = ContentScale.Crop,
                 )
                 Column(
@@ -96,38 +89,48 @@ fun SeriesDetailScreen(
             }
         }
 
-        if (maxPages > 1) {
+        if (state.totalPages > 1) {
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedButton(
-                        onClick = { pageIndex = (pageIndex - 1).coerceAtLeast(0) },
-                        enabled = pageIndex > 0,
+                        onClick = viewModel::previousPage,
+                        enabled = state.currentPage > 0,
                     ) { Text("Página anterior") }
-                    Text("Página ${pageIndex + 1} de $maxPages")
+                    Text("Página ${state.currentPage + 1} de ${state.totalPages}")
                     OutlinedButton(
-                        onClick = { pageIndex = (pageIndex + 1).coerceAtMost(maxPages - 1) },
-                        enabled = pageIndex < maxPages - 1,
+                        onClick = viewModel::nextPage,
+                        enabled = state.currentPage < state.totalPages - 1,
                     ) { Text("Página siguiente") }
                 }
             }
         }
 
-        items(visibleEpisodes) { episodeUi ->
-            Card(onClick = { viewModel.playEpisode(episodeUi.episode); onPlay() }) {
-                Column(modifier = Modifier.padding(14.dp)) {
-                    Text(episodeUi.episode.title, style = MaterialTheme.typography.titleMedium)
-                    Text("Progreso ${(episodeUi.progressRatio * 100).toInt()}%")
-                    if (episodeUi.isCompleted) {
-                        Text("Completado")
-                    }
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 8.dp),
-                        horizontalArrangement = Arrangement.Start,
-                    ) {
+        items(state.episodes) { episodeUi ->
+            Card(
+                onClick = { viewModel.playEpisode(episodeUi.episode); onPlay() },
+                scale = CardDefaults.scale(focusedScale = 1.015f),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(92.dp),
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Text(
+                        text = episodeUi.episode.title,
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.weight(1f),
+                        maxLines = 1,
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        if (episodeUi.isCompleted) {
+                            Text("Completado")
+                        }
                         Button(onClick = { viewModel.playEpisode(episodeUi.episode); onPlay() }) {
-                            Text(if (episodeUi.progressRatio > 0.05f) "Reanudar" else "Ver desde inicio")
+                            Text(if (episodeUi.progressRatio > 0.05f) "Reanudar" else "Ver")
                         }
                     }
                 }
