@@ -73,6 +73,12 @@ fun PlayerScreen(
         )
 
         if (state.showNextEpisodePrompt) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.32f)),
+            )
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -92,7 +98,13 @@ fun PlayerScreen(
                 ) {
                     Text("Continuar viendo")
                 }
-                OutlinedButton(onClick = viewModel::cancelNextEpisodePrompt) {
+                OutlinedButton(
+                    onClick = {
+                        viewModel.cancelNextEpisodePrompt()
+                        viewModel.saveProgressSnapshot()
+                        onBack()
+                    },
+                ) {
                     Text("Cancelar")
                 }
             }
