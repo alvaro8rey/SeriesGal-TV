@@ -1,6 +1,7 @@
 package com.seriegel.tv.ui.screens
 
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -14,13 +15,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.media3.ui.PlayerView
 import androidx.tv.material3.Button
 import androidx.tv.material3.OutlinedButton
 import androidx.tv.material3.Text
-import androidx.compose.ui.unit.dp
 import com.seriegel.tv.ui.viewmodel.PlayerViewModel
 
 @Composable
@@ -29,6 +30,10 @@ fun PlayerScreen(
     viewModel: PlayerViewModel = viewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    BackHandler {
+        viewModel.saveProgressSnapshot()
+        onBack()
+    }
 
     DisposableEffect(Unit) {
         onDispose {
@@ -61,13 +66,6 @@ fun PlayerScreen(
                 Button(onClick = viewModel::playNextNow) { Text("Reproducir ahora") }
                 OutlinedButton(onClick = viewModel::cancelNextEpisodePrompt) { Text("Cancelar") }
             }
-        }
-
-        Row(
-            modifier = Modifier.padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            OutlinedButton(onClick = onBack) { Text("Salir del player") }
         }
     }
 }

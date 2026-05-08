@@ -1,6 +1,7 @@
 package com.seriegel.tv.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,13 +17,14 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,8 +32,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.tv.material3.Button
 import androidx.tv.material3.Card
 import androidx.tv.material3.Icon
@@ -41,12 +43,8 @@ import androidx.tv.material3.OutlinedButton
 import androidx.tv.material3.Text
 import coil.compose.AsyncImage
 import com.seriegel.tv.domain.model.DownloadState
-import com.seriegel.tv.ui.viewmodel.HomeViewModel
 import com.seriegel.tv.ui.viewmodel.HomeCard
-import kotlinx.coroutines.delay
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.Search
+import com.seriegel.tv.ui.viewmodel.HomeViewModel
 
 @Composable
 fun HomeScreen(
@@ -56,18 +54,10 @@ fun HomeScreen(
     viewModel: HomeViewModel = viewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    var heroIndex by remember { mutableIntStateOf(0) }
     var showDownloadsPanel by remember { mutableStateOf(false) }
     val activeDownloads = uiState.activeDownloads
     val aggregateProgress = if (activeDownloads.isEmpty()) 0f else {
         activeDownloads.map { it.progressPercent / 100f }.average().toFloat()
-    }
-
-    LaunchedEffect(uiState.heroItems) {
-        while (uiState.heroItems.isNotEmpty()) {
-            delay(7000)
-            heroIndex = (heroIndex + 1) % uiState.heroItems.size
-        }
     }
 
     Column(
@@ -108,20 +98,6 @@ fun HomeScreen(
                         .padding(horizontal = 8.dp, vertical = 3.dp),
                 )
             }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-        val heroItem = uiState.heroItems.getOrNull(heroIndex)
-        if (heroItem != null) {
-            HeroCard(
-                card = heroItem,
-                onClick = {
-                    when (heroItem) {
-                        is HomeCard.SeriesCard -> onOpenSeries(heroItem.id)
-                        is HomeCard.MovieCard -> onOpenMovie(heroItem.id)
-                    }
-                },
-            )
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -184,40 +160,6 @@ fun HomeScreen(
 }
 
 @Composable
-private fun HeroCard(card: HomeCard, onClick: () -> Unit) {
-    Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(260.dp),
-        ) {
-            AsyncImage(
-                model = card.imageUrl,
-                contentDescription = card.title,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop,
-            )
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        Brush.verticalGradient(
-                            listOf(Color.Transparent, Color.Black.copy(alpha = 0.8f)),
-                        ),
-                    ),
-            )
-            Text(
-                text = card.title,
-                style = MaterialTheme.typography.headlineSmall,
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(20.dp),
-            )
-        }
-    }
-}
-
-@Composable
 private fun ContentCard(
     card: HomeCard,
     onClick: () -> Unit,
@@ -225,23 +167,48 @@ private fun ContentCard(
     Card(
         onClick = onClick,
         modifier = Modifier
-            .size(width = 220.dp, height = 150.dp),
+            .size(width = 240.dp, height = 360.dp),
     ) {
-        Column {
+        Box(modifier = Modifier.fillMaxSize()) {
             AsyncImage(
                 model = card.imageUrl,
                 contentDescription = card.title,
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(106.dp)
-                    .clip(RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp)),
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(12.dp))
+                    .border(1.dp, Color.White.copy(alpha = 0.35f), RoundedCornerShape(12.dp)),
                 contentScale = ContentScale.Crop,
             )
-            Text(
-                card.title,
-                modifier = Modifier.padding(8.dp),
-                maxLines = 2,
-            )
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .fillMaxWidth()
+                    .background(
+                        brush = Brush.verticalGradient(
+                            listOf(
+                                Color.Transparent,
+                                Color.Black.copy(alpha = 0.88f),
+                            ),
+                        ),
+                    )
+                    .padding(10.dp),
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        card.title,
+                        maxLines = 2,
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                    when (card) {
+                        is HomeCard.SeriesCard -> {
+                            card.subtitle?.takeIf { it.isNotBlank() }?.let { Text(it, maxLines = 1) }
+                        }
+                        is HomeCard.MovieCard -> {
+                            card.subtitle?.takeIf { it.isNotBlank() }?.let { Text(it, maxLines = 1) }
+                        }
+                    }
+                }
+            }
         }
     }
 }
