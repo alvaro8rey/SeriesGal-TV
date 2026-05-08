@@ -8,15 +8,10 @@ import com.seriegel.tv.core.config.ServerConfig
 import com.seriegel.tv.domain.model.Episode
 import com.seriegel.tv.domain.model.Series
 import com.seriegel.tv.domain.repository.CatalogRepository
-import com.seriegel.tv.player.NextEpisodePrompt
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 data class EpisodeUi(
@@ -31,12 +26,6 @@ data class ContinueWatchingUi(
     val progressPercent: Int,
 )
 
-data class NextEpisodeCountdownUi(
-    val episodeId: String,
-    val episodeTitle: String,
-    val secondsRemaining: Int,
-)
-
 data class SeriesDetailUiState(
     val isLoading: Boolean = true,
     val series: Series? = null,
@@ -45,7 +34,6 @@ data class SeriesDetailUiState(
     val totalPages: Int = 1,
     val favorite: Boolean = false,
     val continueWatching: ContinueWatchingUi? = null,
-    val nextEpisodeCountdown: NextEpisodeCountdownUi? = null,
     val navigateToPlayer: Boolean = false,
     val episodes: List<EpisodeUi> = emptyList(),
     val errorMessage: String? = null,
@@ -56,18 +44,9 @@ class SeriesDetailViewModel(application: Application) : AndroidViewModel(applica
     private val catalogRepository: CatalogRepository = container.catalogRepository
     private val playbackCoordinator = container.playbackCoordinator
     private var completedEpisodeIds: Set<String> = emptySet()
-    private var countdownJob: Job? = null
 
     private val _uiState = MutableStateFlow(SeriesDetailUiState())
     val uiState: StateFlow<SeriesDetailUiState> = _uiState.asStateFlow()
-
-    init {
-        viewModelScope.launch {
-            playbackCoordinator.nextEpisodePrompt.collectLatest { prompt ->
-                handleNextEpisodePrompt(prompt)
-            }
-        }
-    }
 
     fun load(seriesId: String) {
         viewModelScope.launch {
@@ -91,9 +70,6 @@ class SeriesDetailViewModel(application: Application) : AndroidViewModel(applica
             val continueWatching = fetchContinueWatchingForSeries(series)
             _uiState.update { it.copy(continueWatching = continueWatching) }
             rebuildEpisodes(series, seasonIndex = 0, page = 0)
-            playbackCoordinator.nextEpisodePrompt.value?.let { prompt ->
-                handleNextEpisodePrompt(prompt)
-            }
         }
     }
 
@@ -141,20 +117,6 @@ class SeriesDetailViewModel(application: Application) : AndroidViewModel(applica
         dispatchPlayEpisode(episode)
     }
 
-    fun playNextEpisodeNow() {
-        val state = _uiState.value
-        val series = state.series ?: return
-        val nextEpisodeId = state.nextEpisodeCountdown?.episodeId ?: return
-        val episode = series.allEpisodes.firstOrNull { it.id == nextEpisodeId } ?: return
-        dispatchPlayEpisode(episode)
-    }
-
-    fun cancelNextEpisodeCountdown() {
-        countdownJob?.cancel()
-        playbackCoordinator.clearNextEpisodePrompt()
-        _uiState.update { it.copy(nextEpisodeCountdown = null) }
-    }
-
     fun consumeNavigateToPlayer() {
         _uiState.update { it.copy(navigateToPlayer = false) }
     }
@@ -182,11 +144,8 @@ class SeriesDetailViewModel(application: Application) : AndroidViewModel(applica
             streamUrl = ServerConfig.streamUrl(episode.urlPath),
             nextEpisode = next,
         )
-        playbackCoordinator.clearNextEpisodePrompt()
-        countdownJob?.cancel()
         _uiState.update {
             it.copy(
-                nextEpisodeCountdown = null,
                 navigateToPlayer = true,
             )
         }
@@ -219,37 +178,6 @@ class SeriesDetailViewModel(application: Application) : AndroidViewModel(applica
         }
     }
 
-    private fun handleNextEpisodePrompt(prompt: NextEpisodePrompt?) {
-        val series = _uiState.value.series
-        if (prompt == null || series == null || prompt.seriesId != series.id) {
-            countdownJob?.cancel()
-            _uiState.update { it.copy(nextEpisodeCountdown = null) }
-            return
-        }
-
-        countdownJob?.cancel()
-        countdownJob = viewModelScope.launch {
-            var seconds = 10
-            while (isActive && seconds >= 0) {
-                _uiState.update {
-                    it.copy(
-                        nextEpisodeCountdown = NextEpisodeCountdownUi(
-                            episodeId = prompt.nextEpisode.id,
-                            episodeTitle = prompt.nextEpisode.title,
-                            secondsRemaining = seconds,
-                        ),
-                    )
-                }
-                if (seconds == 0) {
-                    playNextEpisodeNow()
-                    break
-                }
-                delay(1000)
-                seconds--
-            }
-        }
-    }
-
     private suspend fun fetchContinueWatchingForSeries(series: Series): ContinueWatchingUi? {
         val remote = catalogRepository.fetchContinueWatching()
             .getOrDefault(emptyList())
@@ -267,8 +195,5 @@ class SeriesDetailViewModel(application: Application) : AndroidViewModel(applica
         }
     }
 
-    override fun onCleared() {
-        countdownJob?.cancel()
-        super.onCleared()
-    }
+    override fun onCleared() = super.onCleared()
 }

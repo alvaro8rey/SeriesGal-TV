@@ -152,40 +152,6 @@ fun SeriesDetailScreen(
             }
         }
 
-        state.nextEpisodeCountdown?.let { prompt ->
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    scale = CardDefaults.scale(focusedScale = 1.01f),
-                    onClick = {},
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(SeriesGalColors.SurfaceSoft)
-                            .padding(horizontal = 14.dp, vertical = 10.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                    ) {
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(4.dp),
-                            modifier = Modifier.weight(1f),
-                        ) {
-                            Text("Siguiente episodio", color = SeriesGalColors.TextSecondary)
-                            Text(
-                                text = "${prompt.episodeTitle} en ${prompt.secondsRemaining}s",
-                                color = SeriesGalColors.TextPrimary,
-                                maxLines = 1,
-                            )
-                        }
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Button(onClick = viewModel::playNextEpisodeNow) { Text("Reproducir") }
-                            OutlinedButton(onClick = viewModel::cancelNextEpisodeCountdown) { Text("Cancelar") }
-                        }
-                    }
-                }
-            }
-        }
-
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 state.series?.seasons?.forEachIndexed { index, season ->
