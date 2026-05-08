@@ -11,9 +11,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -30,6 +34,13 @@ fun PlayerScreen(
     viewModel: PlayerViewModel = viewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val continueFocusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(state.showNextEpisodePrompt) {
+        if (state.showNextEpisodePrompt) {
+            continueFocusRequester.requestFocus()
+        }
+    }
 
     BackHandler {
         viewModel.saveProgressSnapshot()
@@ -52,7 +63,13 @@ fun PlayerScreen(
                 }
             },
             modifier = Modifier.fillMaxSize(),
-            update = { playerView -> playerView.player = viewModel.player },
+            update = { playerView ->
+                playerView.player = viewModel.player
+                playerView.useController = !state.showNextEpisodePrompt
+                if (state.showNextEpisodePrompt) {
+                    playerView.hideController()
+                }
+            },
         )
 
         if (state.showNextEpisodePrompt) {
@@ -66,9 +83,13 @@ fun PlayerScreen(
             ) {
                 Text(
                     text = "Siguiente episodio en ${state.nextEpisodeCountdown}s",
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.fillMaxWidth(0.48f),
+                    color = Color.White,
                 )
-                Button(onClick = viewModel::playNextNow) {
+                Button(
+                    onClick = viewModel::playNextNow,
+                    modifier = Modifier.focusRequester(continueFocusRequester),
+                ) {
                     Text("Continuar viendo")
                 }
                 OutlinedButton(onClick = viewModel::cancelNextEpisodePrompt) {
