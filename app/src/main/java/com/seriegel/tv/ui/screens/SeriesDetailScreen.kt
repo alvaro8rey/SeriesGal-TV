@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -125,13 +126,22 @@ fun SeriesDetailScreen(
                             .fillMaxWidth()
                             .background(SeriesGalColors.SurfaceSoft)
                             .padding(horizontal = 14.dp, vertical = 10.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
-                        Column {
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
                             Text("Seguir viendo", color = SeriesGalColors.TextSecondary)
                             Text(
                                 text = "${continueWatching.episodeTitle} · ${continueWatching.progressPercent}%",
                                 color = SeriesGalColors.TextPrimary,
+                            )
+                            LinearProgressIndicator(
+                                progress = { (continueWatching.progressPercent / 100f).coerceIn(0f, 1f) },
+                                modifier = Modifier.fillMaxWidth(),
+                                color = SeriesGalColors.BrandBlue,
+                                trackColor = SeriesGalColors.Surface,
                             )
                         }
                         Button(onClick = viewModel::resumeContinueWatching) {
@@ -189,20 +199,12 @@ fun SeriesDetailScreen(
 
         if (state.totalPages > 1) {
             item {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(
-                        onClick = viewModel::previousPage,
-                        enabled = state.currentPage > 0,
-                    ) { Text("Página anterior") }
-                    Text(
-                        text = "Página ${state.currentPage + 1} de ${state.totalPages}",
-                        color = SeriesGalColors.TextSecondary,
-                    )
-                    OutlinedButton(
-                        onClick = viewModel::nextPage,
-                        enabled = state.currentPage < state.totalPages - 1,
-                    ) { Text("Página siguiente") }
-                }
+                PaginationControls(
+                    currentPage = state.currentPage,
+                    totalPages = state.totalPages,
+                    onPrevious = viewModel::previousPage,
+                    onNext = viewModel::nextPage,
+                )
             }
         }
 
@@ -239,5 +241,39 @@ fun SeriesDetailScreen(
                 }
             }
         }
+
+        if (state.totalPages > 1) {
+            item {
+                PaginationControls(
+                    currentPage = state.currentPage,
+                    totalPages = state.totalPages,
+                    onPrevious = viewModel::previousPage,
+                    onNext = viewModel::nextPage,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PaginationControls(
+    currentPage: Int,
+    totalPages: Int,
+    onPrevious: () -> Unit,
+    onNext: () -> Unit,
+) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        OutlinedButton(
+            onClick = onPrevious,
+            enabled = currentPage > 0,
+        ) { Text("Página anterior") }
+        Text(
+            text = "Página ${currentPage + 1} de ${totalPages}",
+            color = SeriesGalColors.TextSecondary,
+        )
+        OutlinedButton(
+            onClick = onNext,
+            enabled = currentPage < totalPages - 1,
+        ) { Text("Página siguiente") }
     }
 }
