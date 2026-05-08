@@ -2,9 +2,7 @@ package com.seriegel.tv.ui.screens
 
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.weight
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -40,17 +38,15 @@ fun PlayerScreen(
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        AndroidView(
-            factory = { context ->
-                PlayerView(context).apply {
-                    player = viewModel.player
-                    useController = true
-                    layoutParams = android.view.ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT)
-                }
-            },
-            modifier = Modifier.weight(1f),
-            update = { playerView -> playerView.player = viewModel.player },
-        )
-    }
+    AndroidView(
+        factory = { context ->
+            PlayerView(context).apply {
+                player = viewModel.player
+                useController = true
+                layoutParams = android.view.ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT)
+            }
+        },
+        modifier = Modifier.fillMaxSize(),
+        update = { playerView -> playerView.player = viewModel.player },
+    )
 }
