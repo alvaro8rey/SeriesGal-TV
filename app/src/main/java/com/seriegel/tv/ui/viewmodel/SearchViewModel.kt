@@ -7,6 +7,7 @@ import com.seriegel.tv.TvApplication
 import com.seriegel.tv.core.config.ServerConfig
 import com.seriegel.tv.domain.model.Movie
 import com.seriegel.tv.domain.model.Series
+import java.text.Normalizer
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -64,15 +65,20 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
 
     private fun applyFilter(query: String) {
         val cleanQuery = query.trim()
+        val normalizedQuery = cleanQuery.normalizeForSearch()
         val filteredSeries = if (cleanQuery.isBlank()) {
             allSeries.take(40)
         } else {
-            allSeries.filter { it.title.contains(cleanQuery, ignoreCase = true) }.take(80)
+            allSeries.filter { series ->
+                series.title.normalizeForSearch().contains(normalizedQuery)
+            }.take(80)
         }
         val filteredMovies = if (cleanQuery.isBlank()) {
             allMovies.take(40)
         } else {
-            allMovies.filter { it.title.contains(cleanQuery, ignoreCase = true) }.take(80)
+            allMovies.filter { movie ->
+                movie.title.normalizeForSearch().contains(normalizedQuery)
+            }.take(80)
         }
 
         _uiState.update {
@@ -98,4 +104,10 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
             )
         }
     }
+}
+
+private fun String.normalizeForSearch(): String {
+    val normalized = Normalizer.normalize(this, Normalizer.Form.NFD)
+    val withoutDiacritics = normalized.replace(Regex("\\p{M}+"), "")
+    return withoutDiacritics.lowercase()
 }
