@@ -12,13 +12,11 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.tv.material3.Button
-import androidx.tv.material3.OutlinedButton
 import androidx.tv.material3.Text
 import com.seriegel.tv.ui.viewmodel.ProfileViewModel
 
 @Composable
 fun ProfileScreen(
-    onOpenDownloads: () -> Unit,
     onLogout: () -> Unit,
     viewModel: ProfileViewModel = viewModel(),
 ) {
@@ -32,13 +30,6 @@ fun ProfileScreen(
     ) {
         Text(text = "Perfil")
         Text(text = "Token: ${state.tokenPreview.ifBlank { "N/A" }}")
-        Text(text = "Calidad preferida: ${state.preferredQuality}")
-        OutlinedButton(onClick = viewModel::cyclePreferredQuality, modifier = Modifier.padding(top = 16.dp)) {
-            Text("Cambiar calidad")
-        }
-        Button(onClick = onOpenDownloads, modifier = Modifier.padding(top = 16.dp)) {
-            Text("Panel de descargas")
-        }
         Button(onClick = onLogout, modifier = Modifier.padding(top = 16.dp)) {
             Text("Cerrar sesión")
         }

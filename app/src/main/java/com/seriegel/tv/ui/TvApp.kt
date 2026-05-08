@@ -3,7 +3,6 @@ package com.seriegel.tv.ui
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
@@ -11,10 +10,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.seriegel.tv.TvApplication
 import com.seriegel.tv.ui.navigation.TvRoutes
 import com.seriegel.tv.ui.screens.AuthScreen
-import com.seriegel.tv.ui.screens.DownloadsScreen
 import com.seriegel.tv.ui.screens.HomeScreen
 import com.seriegel.tv.ui.screens.MovieDetailScreen
 import com.seriegel.tv.ui.screens.PlayerScreen
@@ -23,18 +20,12 @@ import com.seriegel.tv.ui.screens.SeriesDetailScreen
 import com.seriegel.tv.ui.screens.SplashScreen
 import com.seriegel.tv.ui.viewmodel.AppSessionViewModel
 import com.seriegel.tv.ui.viewmodel.SessionUiState
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
-import androidx.compose.runtime.rememberCoroutineScope
 
 @Composable
 fun TvApp() {
     val navController = rememberNavController()
     val sessionViewModel: AppSessionViewModel = viewModel()
     val sessionState by sessionViewModel.uiState.collectAsStateWithLifecycle()
-    val context = LocalContext.current.applicationContext as TvApplication
-    val appContainer = context.appContainer
-    val scope = rememberCoroutineScope()
 
     LaunchedEffect(sessionState) {
         when (sessionState) {
@@ -74,26 +65,11 @@ fun TvApp() {
         }
         composable(TvRoutes.PROFILE) {
             ProfileScreen(
-                onOpenDownloads = { navController.navigate(TvRoutes.DOWNLOADS) },
                 onLogout = {
                     sessionViewModel.logout()
                     navController.navigate(TvRoutes.AUTH) {
                         popUpTo(navController.graph.id) { inclusive = true }
                         launchSingleTop = true
-                    }
-                },
-            )
-        }
-        composable(TvRoutes.DOWNLOADS) {
-            DownloadsScreen(
-                onBack = { navController.popBackStack() },
-                onPlayDownload = { downloadId ->
-                    scope.launch {
-                        val item = appContainer.downloadsRepository.downloads.first().firstOrNull { it.id == downloadId }
-                        if (item != null) {
-                            appContainer.playbackCoordinator.playDownloaded(item)
-                            navController.navigate(TvRoutes.PLAYER)
-                        }
                     }
                 },
             )

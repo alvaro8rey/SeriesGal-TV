@@ -5,7 +5,6 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.seriegel.tv.TvApplication
 import com.seriegel.tv.core.config.ServerConfig
-import com.seriegel.tv.domain.model.DownloadItem
 import com.seriegel.tv.domain.model.Movie
 import com.seriegel.tv.domain.model.Series
 import com.seriegel.tv.domain.repository.CatalogRepository
@@ -20,7 +19,6 @@ data class HomeUiState(
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
     val sections: List<HomeSection> = emptyList(),
-    val activeDownloads: List<DownloadItem> = emptyList(),
     val favorites: Set<String> = emptySet(),
 )
 
@@ -60,12 +58,6 @@ class HomeViewModel(
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
     init {
-        viewModelScope.launch {
-            container.downloadsRepository.activeDownloads.collect { active ->
-                _uiState.update { it.copy(activeDownloads = active) }
-            }
-        }
-        viewModelScope.launch { container.downloadsRepository.refresh() }
         refresh()
     }
 
@@ -105,13 +97,6 @@ class HomeViewModel(
         viewModelScope.launch {
             catalogRepository.toggleFavorite(seriesId)
             refresh()
-        }
-    }
-
-    fun cancelDownload(downloadId: String) {
-        viewModelScope.launch {
-            container.downloadsRepository.remove(downloadId)
-            container.downloadsRepository.refresh()
         }
     }
 }

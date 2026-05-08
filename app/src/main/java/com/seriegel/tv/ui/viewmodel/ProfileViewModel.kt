@@ -12,7 +12,6 @@ import kotlinx.coroutines.launch
 
 data class ProfileUiState(
     val tokenPreview: String = "",
-    val preferredQuality: String = "HIGH",
 )
 
 class ProfileViewModel(application: Application) : AndroidViewModel(application) {
@@ -25,23 +24,9 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
     init {
         viewModelScope.launch {
             val token = sessionDataStore.token.first().orEmpty()
-            val quality = sessionDataStore.preferredQuality.first()
             _uiState.value = ProfileUiState(
                 tokenPreview = token.take(12).plus(if (token.length > 12) "..." else ""),
-                preferredQuality = quality,
             )
-        }
-    }
-
-    fun cyclePreferredQuality() {
-        viewModelScope.launch {
-            val next = when (_uiState.value.preferredQuality) {
-                "HIGH" -> "MEDIUM"
-                "MEDIUM" -> "LOW"
-                else -> "HIGH"
-            }
-            sessionDataStore.setPreferredQuality(next)
-            _uiState.value = _uiState.value.copy(preferredQuality = next)
         }
     }
 }
