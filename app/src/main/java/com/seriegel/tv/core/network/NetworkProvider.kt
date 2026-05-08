@@ -8,6 +8,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
+import java.util.concurrent.TimeUnit
 
 @OptIn(ExperimentalSerializationApi::class)
 object NetworkProvider {
@@ -24,13 +25,24 @@ object NetworkProvider {
 
     private val okHttpClient: OkHttpClient = OkHttpClient.Builder()
         .addInterceptor(loggingInterceptor)
+        .connectTimeout(20, TimeUnit.SECONDS)
+        .readTimeout(30, TimeUnit.SECONDS)
+        .writeTimeout(30, TimeUnit.SECONDS)
         .build()
 
-    private val retrofit: Retrofit = Retrofit.Builder()
+    private val apiRetrofit: Retrofit = Retrofit.Builder()
         .baseUrl(ServerConfig.API_BASE_URL)
         .client(okHttpClient)
         .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
         .build()
 
-    fun <T> create(service: Class<T>): T = retrofit.create(service)
+    private val webRetrofit: Retrofit = Retrofit.Builder()
+        .baseUrl(ServerConfig.WEB_BASE_URL)
+        .client(okHttpClient)
+        .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
+        .build()
+
+    fun <T> createApi(service: Class<T>): T = apiRetrofit.create(service)
+
+    fun <T> createWeb(service: Class<T>): T = webRetrofit.create(service)
 }

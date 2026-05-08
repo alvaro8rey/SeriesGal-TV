@@ -19,3 +19,8 @@ data class UserDto(
     @SerialName("id") val id: String? = null,
     @SerialName("username") val username: String? = null,
 )
+
+@Serializable
+data class SeriesFavoritePayloadDto(
+    val seriesId: String,
+)

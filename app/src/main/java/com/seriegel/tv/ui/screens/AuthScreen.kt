@@ -1,0 +1,67 @@
+package com.seriegel.tv.ui.screens
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.tv.material3.Button
+import androidx.tv.material3.Card
+import androidx.tv.material3.OutlinedButton
+import androidx.tv.material3.OutlinedTextField
+import androidx.tv.material3.Text
+import com.seriegel.tv.ui.viewmodel.AuthViewModel
+
+@Composable
+fun AuthScreen(
+    viewModel: AuthViewModel = viewModel(),
+) {
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(36.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Card(
+            modifier = Modifier.fillMaxWidth(0.5f),
+            onClick = {},
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                Text(if (state.isRegisterMode) "Crear cuenta" else "Iniciar sesión")
+                OutlinedTextField(
+                    value = state.username,
+                    onValueChange = viewModel::onUsernameChanged,
+                    label = { Text("Usuario") },
+                )
+                OutlinedTextField(
+                    value = state.password,
+                    onValueChange = viewModel::onPasswordChanged,
+                    label = { Text("Password") },
+                )
+                state.errorMessage?.let { Text(text = it) }
+                Button(
+                    onClick = viewModel::submit,
+                    enabled = !state.isLoading,
+                ) {
+                    Text(if (state.isLoading) "Procesando..." else if (state.isRegisterMode) "Registrarme" else "Entrar")
+                }
+                OutlinedButton(onClick = viewModel::toggleMode) {
+                    Text(if (state.isRegisterMode) "Ya tengo cuenta" else "Crear cuenta")
+                }
+            }
+        }
+    }
+}

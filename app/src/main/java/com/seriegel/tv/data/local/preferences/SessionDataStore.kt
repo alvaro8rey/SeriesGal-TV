@@ -20,6 +20,7 @@ class SessionDataStore(
 ) {
     private val tokenKey = stringPreferencesKey("auth_token")
     private val onboardingCompletedKey = booleanPreferencesKey("onboarding_completed")
+    private val preferredQualityKey = stringPreferencesKey("preferred_download_quality")
 
     val token: Flow<String?> = context.sessionDataStore.data
         .catch { throwable ->
@@ -29,6 +30,9 @@ class SessionDataStore(
 
     val onboardingCompleted: Flow<Boolean> = context.sessionDataStore.data
         .map { preferences -> preferences[onboardingCompletedKey] ?: false }
+
+    val preferredQuality: Flow<String> = context.sessionDataStore.data
+        .map { preferences -> preferences[preferredQualityKey] ?: "HIGH" }
 
     suspend fun saveToken(value: String) {
         context.sessionDataStore.edit { preferences ->
@@ -45,6 +49,12 @@ class SessionDataStore(
     suspend fun setOnboardingCompleted(value: Boolean) {
         context.sessionDataStore.edit { preferences ->
             preferences[onboardingCompletedKey] = value
+        }
+    }
+
+    suspend fun setPreferredQuality(value: String) {
+        context.sessionDataStore.edit { preferences ->
+            preferences[preferredQualityKey] = value
         }
     }
 }
