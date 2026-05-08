@@ -77,15 +77,17 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     private fun onPlaybackEnded() {
-        val request = _uiState.value.request ?: return
-        val next = request.nextEpisode
-        if (next != null) {
-            coordinator.requestNextEpisodePrompt(request.seriesId, next)
-        } else {
-            coordinator.clearNextEpisodePrompt()
+        viewModelScope.launch {
+            val request = _uiState.value.request ?: return@launch
+            val next = request.nextEpisode
+            if (next != null) {
+                coordinator.requestNextEpisodePrompt(request.seriesId, next)
+            } else {
+                coordinator.clearNextEpisodePrompt()
+            }
+            persistProgressNow()
+            _uiState.update { it.copy(closePlayer = true) }
         }
-        saveProgressSnapshot()
-        _uiState.update { it.copy(closePlayer = true) }
     }
 
     fun consumeClosePlayer() {
@@ -93,8 +95,10 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun forceClosePlayer() {
-        saveProgressSnapshot()
-        _uiState.update { it.copy(closePlayer = true) }
+        viewModelScope.launch {
+            persistProgressNow()
+            _uiState.update { it.copy(closePlayer = true) }
+        }
     }
 
     private fun startPeriodicProgressSaves() {
@@ -108,28 +112,31 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun saveProgressSnapshot() {
-        val request = _uiState.value.request ?: return
-        val position = player.currentPosition.coerceAtLeast(0L) / 1000.0
-        val duration = player.duration.takeIf { it > 0 }?.div(1000.0) ?: 0.0
         viewModelScope.launch {
-            catalogRepository.saveProgress(
-                ProgressUpdate(
-                    seriesId = request.seriesId,
-                    episodeId = request.episodeId,
-                    timeSeconds = position,
-                    durationSeconds = duration,
-                    episodeTitle = request.episodeTitle,
-                    urlPath = request.streamUrl.toRelativeUrlPath(),
-                ),
-            )
+            persistProgressNow()
         }
     }
 
     override fun onCleared() {
-        saveProgressSnapshot()
         progressJob?.cancel()
         player.release()
         super.onCleared()
+    }
+
+    private suspend fun persistProgressNow() {
+        val request = _uiState.value.request ?: return
+        val position = player.currentPosition.coerceAtLeast(0L) / 1000.0
+        val duration = player.duration.takeIf { it > 0 }?.div(1000.0) ?: 0.0
+        catalogRepository.saveProgress(
+            ProgressUpdate(
+                seriesId = request.seriesId,
+                episodeId = request.episodeId,
+                timeSeconds = position,
+                durationSeconds = duration,
+                episodeTitle = request.episodeTitle,
+                urlPath = request.streamUrl.toRelativeUrlPath(),
+            ),
+        )
     }
 }
 

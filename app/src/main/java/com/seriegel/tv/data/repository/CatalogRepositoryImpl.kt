@@ -72,6 +72,18 @@ class CatalogRepositoryImpl(
         }
     }
 
+    override suspend fun fetchCachedContinueWatching(seriesId: String): ContinueWatchingEntry? {
+        val latest = progressDao.latestForSeries(seriesId) ?: return null
+        return ContinueWatchingEntry(
+            seriesId = latest.seriesId,
+            episodeId = latest.episodeId,
+            episodeTitle = latest.episodeId,
+            urlPath = null,
+            timeSeconds = latest.timeSeconds,
+            durationSeconds = latest.durationSeconds,
+        )
+    }
+
     override suspend fun fetchEpisodeProgress(seriesId: String, episodeId: String): Result<EpisodeProgress> = runCatching {
         Log.d(tag, "fetchEpisodeProgress() seriesId=$seriesId episodeId=$episodeId")
         try {
@@ -109,19 +121,6 @@ class CatalogRepositoryImpl(
 
     override suspend fun saveProgress(update: ProgressUpdate): Result<Unit> = runCatching {
         Log.d(tag, "saveProgress() ${update.seriesId}/${update.episodeId}")
-        withToken { token ->
-            backendApi.saveProgress(
-                token,
-                ProgressPayloadDto(
-                    seriesId = update.seriesId,
-                    episodeId = update.episodeId,
-                    time = update.timeSeconds,
-                    duration = update.durationSeconds,
-                    episodeTitle = update.episodeTitle,
-                    url = update.urlPath,
-                ),
-            )
-        }
         progressDao.upsert(
             ProgressCacheEntity(
                 id = "${update.seriesId}::${update.episodeId}",
@@ -131,6 +130,23 @@ class CatalogRepositoryImpl(
                 durationSeconds = update.durationSeconds,
             ),
         )
+        runCatching {
+            withToken { token ->
+                backendApi.saveProgress(
+                    token,
+                    ProgressPayloadDto(
+                        seriesId = update.seriesId,
+                        episodeId = update.episodeId,
+                        time = update.timeSeconds,
+                        duration = update.durationSeconds,
+                        episodeTitle = update.episodeTitle,
+                        url = update.urlPath,
+                    ),
+                )
+            }
+        }.onFailure { throwable ->
+            Log.w(tag, "saveProgress() remote failed, kept local cache", throwable)
+        }
     }
 
     private suspend fun <T> withToken(call: suspend (String) -> T): T {

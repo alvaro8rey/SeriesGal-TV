@@ -251,19 +251,20 @@ class SeriesDetailViewModel(application: Application) : AndroidViewModel(applica
     }
 
     private suspend fun fetchContinueWatchingForSeries(series: Series): ContinueWatchingUi? {
-        return catalogRepository.fetchContinueWatching()
+        val remote = catalogRepository.fetchContinueWatching()
             .getOrDefault(emptyList())
             .firstOrNull { entry ->
                 entry.seriesId == series.id && entry.ratio in 0.01f..0.95f
             }
-            ?.let { entry ->
-                val episode = series.allEpisodes.firstOrNull { it.id == entry.episodeId } ?: return@let null
-                ContinueWatchingUi(
-                    episodeId = episode.id,
-                    episodeTitle = episode.title.ifBlank { entry.episodeTitle.ifBlank { entry.episodeId } },
-                    progressPercent = (entry.ratio * 100).toInt().coerceIn(1, 99),
-                )
-            }
+        val chosen = remote ?: catalogRepository.fetchCachedContinueWatching(series.id)
+        return chosen?.let { entry ->
+            val episode = series.allEpisodes.firstOrNull { it.id == entry.episodeId } ?: return@let null
+            ContinueWatchingUi(
+                episodeId = episode.id,
+                episodeTitle = episode.title.ifBlank { entry.episodeTitle.ifBlank { entry.episodeId } },
+                progressPercent = (entry.ratio * 100).toInt().coerceIn(1, 99),
+            )
+        }
     }
 
     override fun onCleared() {

@@ -3,16 +3,20 @@
 package com.seriegel.tv.data.remote.model
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.json.JsonNames
 
 @Serializable
 data class ProgressPayloadDto(
+    @SerialName("series_id")
     @JsonNames("series_id", "seriesId")
     val seriesId: String,
+    @SerialName("episode_id")
     @JsonNames("episode_id", "episodeId")
     val episodeId: String,
     val time: Double,
     val duration: Double,
+    @SerialName("episode_title")
     @JsonNames("episode_title", "episodeTitle")
     val episodeTitle: String? = null,
     val url: String? = null,

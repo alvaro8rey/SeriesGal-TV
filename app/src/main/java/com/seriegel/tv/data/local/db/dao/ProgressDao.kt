@@ -26,6 +26,16 @@ interface ProgressDao {
         SELECT * FROM progress_cache
         WHERE seriesId = :seriesId
         ORDER BY updatedAtEpochMs DESC
+        LIMIT 1
+        """,
+    )
+    suspend fun latestForSeries(seriesId: String): ProgressCacheEntity?
+
+    @Query(
+        """
+        SELECT * FROM progress_cache
+        WHERE seriesId = :seriesId
+        ORDER BY updatedAtEpochMs DESC
         """,
     )
     fun observeBySeries(seriesId: String): Flow<List<ProgressCacheEntity>>

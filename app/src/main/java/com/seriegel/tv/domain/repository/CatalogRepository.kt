@@ -23,6 +23,8 @@ interface CatalogRepository {
 
     suspend fun fetchContinueWatching(): Result<List<ContinueWatchingEntry>>
 
+    suspend fun fetchCachedContinueWatching(seriesId: String): ContinueWatchingEntry?
+
     suspend fun fetchEpisodeProgress(seriesId: String, episodeId: String): Result<EpisodeProgress>
 
     suspend fun fetchSeriesProgress(seriesId: String): Result<Set<String>>
