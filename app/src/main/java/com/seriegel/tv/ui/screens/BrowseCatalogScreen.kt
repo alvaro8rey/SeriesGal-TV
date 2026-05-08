@@ -123,7 +123,7 @@ private fun BrowseGridCard(item: BrowseCatalogItem, onClick: () -> Unit) {
     Card(
         onClick = onClick,
         scale = CardDefaults.scale(focusedScale = 1.015f),
-        modifier = Modifier.size(width = 145.dp, height = 215.dp),
+        modifier = Modifier.size(width = 124.dp, height = 180.dp),
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             AsyncImage(
