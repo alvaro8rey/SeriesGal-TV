@@ -1,6 +1,8 @@
 package com.seriegel.tv.ui.screens
 
+import android.app.Activity
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
+import android.view.WindowManager
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -18,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -35,6 +38,7 @@ fun PlayerScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val continueFocusRequester = remember { FocusRequester() }
+    val activity = LocalContext.current as? Activity
 
     LaunchedEffect(state.showNextEpisodePrompt) {
         if (state.showNextEpisodePrompt) {
@@ -48,7 +52,9 @@ fun PlayerScreen(
     }
 
     DisposableEffect(Unit) {
+        activity?.window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         onDispose {
+            activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
             viewModel.saveProgressSnapshot()
         }
     }
