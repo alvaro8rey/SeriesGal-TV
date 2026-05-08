@@ -2,6 +2,7 @@ package com.seriegel.tv.data.repository
 
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import androidx.media3.common.C
 import androidx.media3.common.MimeTypes
 import androidx.media3.exoplayer.offline.Download
@@ -31,6 +32,7 @@ class DownloadsRepositoryImpl(
     context: Context,
     private val downloadDao: DownloadDao,
 ) : DownloadsRepository {
+    private val tag = "DownloadsRepository"
     private val appContext = context.applicationContext
     private val infra = DownloadInfrastructure.get(appContext)
     private val mutex = Mutex()
@@ -77,6 +79,7 @@ class DownloadsRepositoryImpl(
         seriesId: String?,
         episodeId: String?,
     ) {
+        Log.d(tag, "enqueue() id=$id quality=${quality.name}")
         val request = DownloadRequest.Builder(id, Uri.parse(streamUrl))
             .setMimeType(MimeTypes.APPLICATION_M3U8)
             .build()
@@ -106,12 +109,14 @@ class DownloadsRepositoryImpl(
     }
 
     override suspend fun remove(id: String) {
+        Log.d(tag, "remove() id=$id")
         DownloadService.sendRemoveDownload(appContext, TvDownloadService::class.java, id, false)
         downloadDao.deleteById(id)
         refresh()
     }
 
     override suspend fun removeAll() {
+        Log.d(tag, "removeAll()")
         DownloadService.sendRemoveAllDownloads(appContext, TvDownloadService::class.java, false)
         downloadDao.deleteAll()
         refresh()
@@ -130,6 +135,7 @@ class DownloadsRepositoryImpl(
     }
 
     private suspend fun refreshFromSources() {
+        Log.d(tag, "refreshFromSources()")
         val managerDownloads = infra.downloadManager.currentDownloads.associateBy { it.request.id }
         val localDownloads = runCatching { downloadDao.getAll() }.getOrDefault(emptyList())
         val merged = localDownloads.map { entity ->
@@ -137,7 +143,7 @@ class DownloadsRepositoryImpl(
             val resolvedState = remote?.toDomainState() ?: entity.status.toDomainState()
             val progress = when {
                 remote == null -> entity.progressPercent
-                remote.percentDownloaded == C.PERCENTAGE_UNSET -> 0f
+                remote.percentDownloaded < 0f -> 0f
                 else -> remote.percentDownloaded
             }
             entity.toDomain().copy(

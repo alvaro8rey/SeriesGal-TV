@@ -30,11 +30,10 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.tv.material3.Border
 import androidx.tv.material3.Button
 import androidx.tv.material3.Card
-import androidx.tv.material3.CircularProgressIndicator
 import androidx.tv.material3.Icon
 import androidx.tv.material3.IconButton
 import androidx.tv.material3.MaterialTheme
@@ -94,7 +93,7 @@ fun HomeScreen(
                 }
                 if (activeDownloads.isNotEmpty()) {
                     CircularProgressIndicator(
-                        progress = aggregateProgress,
+                        progress = { aggregateProgress },
                         modifier = Modifier.size(42.dp),
                     )
                 }
@@ -159,9 +158,6 @@ fun HomeScreen(
             modifier = Modifier
                 .padding(90.dp)
                 .fillMaxWidth(0.55f),
-            border = Border(
-                border = androidx.compose.foundation.BorderStroke(1.dp, Color.Gray),
-            ),
         ) {
             Column(
                 modifier = Modifier.padding(24.dp),
@@ -174,7 +170,10 @@ fun HomeScreen(
                     activeDownloads.forEach { item ->
                         Text("${item.title} · ${(item.progressPercent).toInt()}% · ${item.state}")
                         if (item.state == DownloadState.DOWNLOADING || item.state == DownloadState.QUEUED) {
-                            CircularProgressIndicator(progress = (item.progressPercent / 100f).coerceIn(0f, 1f))
+                            CircularProgressIndicator(progress = { (item.progressPercent / 100f).coerceIn(0f, 1f) })
+                            OutlinedButton(onClick = { viewModel.cancelDownload(item.id) }) {
+                                Text("Cancelar")
+                            }
                         }
                     }
                 }

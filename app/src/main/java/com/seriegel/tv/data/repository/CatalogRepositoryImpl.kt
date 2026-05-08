@@ -1,5 +1,6 @@
 package com.seriegel.tv.data.repository
 
+import android.util.Log
 import com.seriegel.tv.data.local.db.dao.ProgressDao
 import com.seriegel.tv.data.local.db.entity.ProgressCacheEntity
 import com.seriegel.tv.data.local.preferences.SessionDataStore
@@ -28,10 +29,12 @@ class CatalogRepositoryImpl(
     private val sessionDataStore: SessionDataStore,
     private val progressDao: ProgressDao,
 ) : CatalogRepository {
+    private val tag = "CatalogRepository"
     private val _cachedCatalog = MutableStateFlow<Catalog?>(null)
     override val cachedCatalog: StateFlow<Catalog?> = _cachedCatalog
 
     override suspend fun refreshCatalog(): Result<Catalog> = runCatching {
+        Log.d(tag, "refreshCatalog()")
         val catalog = catalogApi.catalog().toDomain()
         _cachedCatalog.value = catalog
         catalog
@@ -48,12 +51,14 @@ class CatalogRepositoryImpl(
     }
 
     override suspend fun fetchFavorites(): Result<Set<String>> = runCatching {
+        Log.d(tag, "fetchFavorites()")
         withToken { token ->
             backendApi.favorites(token).mapNotNull { it.seriesId }.toSet()
         }
     }
 
     override suspend fun toggleFavorite(seriesId: String): Result<Unit> = runCatching {
+        Log.d(tag, "toggleFavorite() seriesId=$seriesId")
         withToken { token ->
             backendApi.toggleFavorite(token, com.seriegel.tv.data.remote.model.SeriesFavoritePayloadDto(seriesId))
             Unit
@@ -61,12 +66,14 @@ class CatalogRepositoryImpl(
     }
 
     override suspend fun fetchContinueWatching(): Result<List<ContinueWatchingEntry>> = runCatching {
+        Log.d(tag, "fetchContinueWatching()")
         withToken { token ->
             backendApi.continueWatching(token).mapNotNull { it.toDomainOrNull() }
         }
     }
 
     override suspend fun fetchEpisodeProgress(seriesId: String, episodeId: String): Result<EpisodeProgress> = runCatching {
+        Log.d(tag, "fetchEpisodeProgress() seriesId=$seriesId episodeId=$episodeId")
         try {
             withToken { token ->
                 val response = backendApi.progress(token, seriesId, episodeId)
@@ -101,6 +108,7 @@ class CatalogRepositoryImpl(
     }
 
     override suspend fun saveProgress(update: ProgressUpdate): Result<Unit> = runCatching {
+        Log.d(tag, "saveProgress() ${update.seriesId}/${update.episodeId}")
         withToken { token ->
             backendApi.saveProgress(
                 token,

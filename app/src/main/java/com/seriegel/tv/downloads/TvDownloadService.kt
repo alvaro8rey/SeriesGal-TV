@@ -5,18 +5,18 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
-import androidx.media3.common.util.NotificationUtil
 import androidx.media3.exoplayer.offline.Download
 import androidx.media3.exoplayer.offline.DownloadManager
 import androidx.media3.exoplayer.offline.DownloadService
 import androidx.media3.exoplayer.scheduler.Scheduler
-import androidx.media3.exoplayer.R as Media3ExoPlayerR
+import com.seriegel.tv.R
 
 class TvDownloadService : DownloadService(
     FOREGROUND_NOTIFICATION_ID,
     DEFAULT_FOREGROUND_NOTIFICATION_UPDATE_INTERVAL,
     CHANNEL_ID,
-    0,
+    R.string.app_name,
+    R.string.app_name,
 ) {
     override fun onCreate() {
         super.onCreate()
@@ -36,7 +36,7 @@ class TvDownloadService : DownloadService(
         val helper = androidx.media3.exoplayer.offline.DownloadNotificationHelper(this, CHANNEL_ID)
         return helper.buildProgressNotification(
             this,
-            Media3ExoPlayerR.drawable.exo_notification_small_icon,
+            android.R.drawable.stat_sys_download,
             null,
             null,
             downloads,
@@ -60,14 +60,6 @@ class TvDownloadService : DownloadService(
                         ),
                     )
                 }
-            } else {
-                NotificationUtil.createNotificationChannel(
-                    context,
-                    CHANNEL_ID.hashCode(),
-                    android.R.string.dialog_alert_title,
-                    android.R.string.dialog_alert_title,
-                    NotificationUtil.IMPORTANCE_LOW,
-                )
             }
         }
     }

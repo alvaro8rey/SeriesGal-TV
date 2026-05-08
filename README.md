@@ -1,14 +1,17 @@
 # SeriesGal TV (Android TV)
 
-Base inicial de la app Android TV con:
+App Android TV completa en Kotlin + Compose TV, conectada al backend real definido en el contrato.
+
+## Stack técnico
 
 - Kotlin
-- Jetpack Compose para TV
+- Jetpack Compose TV (`androidx.tv:tv-material`)
 - Arquitectura MVVM + Repository
 - Retrofit + OkHttp + kotlinx.serialization
-- Media3 ExoPlayer
-- Coil
-- DataStore + Room
+- Media3 ExoPlayer + HLS + DownloadManager offline
+- Coil para imágenes
+- DataStore (token/settings)
+- Room (estado de descargas y cache local de progreso)
 - Coroutines + Flow
 
 ## Requisitos
@@ -17,29 +20,149 @@ Base inicial de la app Android TV con:
 - JDK 17
 - Android SDK Platform 35
 - Android TV Emulator o dispositivo Android TV
+- Conectividad a:
+  - `https://servidor.tail0dc0c0.ts.net/api`
+  - `https://servidor.tail0dc0c0.ts.net`
 
-## Configuracion centralizada de servidor
+## Configuración centralizada del servidor
 
-Se define en `app/build.gradle.kts` via `BuildConfig`:
+En `app/build.gradle.kts`:
 
-- `API_BASE_URL = "https://servidor.tail0dc0c0.ts.net/api/"`
-- `WEB_BASE_URL = "https://servidor.tail0dc0c0.ts.net/"`
+```kotlin
+buildConfigField("String", "API_BASE_URL", "\"https://servidor.tail0dc0c0.ts.net/api/\"")
+buildConfigField("String", "WEB_BASE_URL", "\"https://servidor.tail0dc0c0.ts.net/\"")
+```
 
-Consumo centralizado en:
+Uso centralizado en:
 
 - `com.seriegel.tv.core.config.ServerConfig`
 
-## Como abrir y compilar
+### Cómo cambiar las base URLs
 
-1. Abrir Android Studio.
-2. `File > Open` y seleccionar la carpeta del proyecto.
-3. Esperar sync de Gradle.
-4. Seleccionar target TV (`app`).
-5. Ejecutar `Run 'app'`.
+1. Editar `app/build.gradle.kts` en los `buildConfigField`.
+2. Hacer Gradle Sync.
+3. Recompilar.
 
-## Como validar base Fase 1
+## Estructura principal
 
-1. La app abre en launcher TV (leanback).
-2. Muestra pantalla inicial con botones foco navegable por D-pad.
-3. Se puede navegar a pantalla de perfil.
-4. El modulo `app` compila en `debug` y `release` con SDK configurado.
+```text
+app/
+  data/        # remote/local/repository
+  domain/      # modelos y contratos de repositorio
+  ui/          # pantallas + viewmodels + navegación
+  player/      # player factory + coordinator
+  downloads/   # Media3 download service/infrastructure
+  core/        # config/network/errores/utilidades
+```
+
+## Backend contract implementado
+
+### Auth
+- `POST /login`
+- `POST /register`
+- `GET /me` (si 401/403 => logout local; si error red => mantener sesión)
+
+### Catálogo
+- `GET /catalog.json`
+- Normalización de series:
+  - soporta `seasons[]`
+  - soporta `episodes[]` directo (crea temporada virtual)
+
+### Favoritos
+- `GET /favorites` (parser tolerante `seriesId` / `series_id`)
+- `POST /favorites` (`toggle`)
+
+### Progreso
+- `POST /progress`
+- `GET /continue-watching` (parser tolerante snake_case/camelCase)
+- `GET /progress/{seriesId}/{episodeId}`
+- `GET /series-progress/{seriesId}`
+
+## Funcionalidades implementadas
+
+### Sesión
+- Login/Register.
+- Persistencia de token en DataStore.
+- Validación automática de sesión con `/me`.
+- Logout manual desde perfil.
+
+### Home Android TV
+- Hero dinámico auto-rotando.
+- Secciones:
+  - Seguir viendo
+  - Pendientes por terminar
+  - Porque viste X
+  - Recientemente añadidos
+  - Más vistos esta semana
+  - Series / Películas
+- Navegación por foco D-pad.
+
+### Detalles de serie/película
+- Serie:
+  - Temporadas + episodios
+  - Progreso por episodio
+  - Reanudar / inicio
+  - Descarga por episodio con estados
+- Película:
+  - Reproducir / reanudar
+  - Descarga offline con selección de calidad
+
+### Player
+- Media3 ExoPlayer HLS online.
+- Reproducción con cache/offline cuando está descargado.
+- Guardado periódico de progreso (cada 15s) + snapshot al salir.
+- Auto siguiente episodio con cuenta atrás (10s), cancelar o reproducir ahora.
+
+### Descargas offline
+- Media3 DownloadManager + DownloadService.
+- Estados de descarga y progreso.
+- Panel de descargas:
+  - Memoria usada
+  - Elementos descargados
+  - Reproducir descargado
+  - Borrar individual / borrar todo
+- Cabecera Home:
+  - Icono de descargas activas
+  - Progreso agregado circular
+  - Badge con cantidad activa
+  - Panel rápido y cancelar por ítem activo
+
+## Build y ejecución
+
+### Desde Android Studio
+
+1. `File > Open` y seleccionar el proyecto.
+2. Esperar Gradle Sync.
+3. Seleccionar módulo `app`.
+4. Ejecutar en emulador Android TV o dispositivo real.
+
+### Desde terminal
+
+```bash
+./gradlew :app:assembleDebug
+```
+
+En Windows:
+
+```bat
+gradlew.bat :app:assembleDebug
+```
+
+## Validación end-to-end recomendada
+
+1. Abrir app en launcher TV.
+2. Login/Register exitoso.
+3. Home carga hero y secciones.
+4. Entrar a detalle de serie y reproducir episodio.
+5. Salir del player y confirmar progreso guardado.
+6. Volver a episodio y comprobar reanudación.
+7. Marcar/quitar favorito y validar persistencia.
+8. Descargar episodio/película.
+9. Ver progreso y estado en panel de descargas.
+10. Reproducir contenido descargado.
+11. Borrar descarga individual y luego borrar todo.
+
+## Notas de depuración
+
+- Logging de red habilitado con OkHttp (`BASIC`).
+- Repositorios principales emiten logs (`AuthRepository`, `CatalogRepository`, `DownloadsRepository`).

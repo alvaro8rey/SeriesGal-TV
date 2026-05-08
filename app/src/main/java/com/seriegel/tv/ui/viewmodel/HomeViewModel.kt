@@ -113,6 +113,13 @@ class HomeViewModel(
             refresh()
         }
     }
+
+    fun cancelDownload(downloadId: String) {
+        viewModelScope.launch {
+            container.downloadsRepository.remove(downloadId)
+            container.downloadsRepository.refresh()
+        }
+    }
 }
 
 private fun buildSections(

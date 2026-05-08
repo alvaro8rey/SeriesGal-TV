@@ -10,12 +10,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.material3.OutlinedTextField
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.tv.material3.Button
 import androidx.tv.material3.Card
 import androidx.tv.material3.OutlinedButton
-import androidx.tv.material3.OutlinedTextField
 import androidx.tv.material3.Text
 import com.seriegel.tv.ui.viewmodel.AuthViewModel
 

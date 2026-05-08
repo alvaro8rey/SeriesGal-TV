@@ -1,3 +1,5 @@
+@file:OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)
+
 package com.seriegel.tv.data.remote.model
 
 import kotlinx.serialization.Serializable
